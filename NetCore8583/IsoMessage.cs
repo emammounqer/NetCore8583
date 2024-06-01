@@ -107,8 +107,11 @@ namespace NetCore8583
     public IsoMessage SetField(int index,
       IsoValue field)
     {
-      if (index is < 2 or > 128) throw new IndexOutOfRangeException("Field index must be between 2 and 128");
-      if (field != null) field.Encoding = Encoding;
+    if (index < 2 || index > 128)
+    {
+        throw new IndexOutOfRangeException("Field index must be between 2 and 128");
+    }
+    if (field != null) field.Encoding = Encoding;
       _fields[index] = field;
       return this;
     }
@@ -120,10 +123,12 @@ namespace NetCore8583
     /// <returns></returns>
     public IsoMessage SetFields(Dictionary<int, IsoValue> values)
     {
-      foreach (var (key, value) in values)
-        SetField(key,
-          value);
-      return this;
+        foreach (var kvp in values)
+        {
+            SetField(kvp.Key, kvp.Value);
+        }
+
+        return this;
     }
 
     /// <summary>
@@ -141,7 +146,8 @@ namespace NetCore8583
       IsoType t,
       int length)
     {
-      if (index is < 2 or > 128) throw new IndexOutOfRangeException("Field index must be between 2 and 128");
+      if (index < 2 || index > 128) throw new IndexOutOfRangeException("Field index must be between 2 and 128");
+
       if (value != null)
       {
         var v = t.NeedsLength()

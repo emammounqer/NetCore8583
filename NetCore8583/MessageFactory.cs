@@ -5,9 +5,6 @@ using System.Linq;
 using System.Text;
 using NetCore8583.Parse;
 using NetCore8583.Util;
-using Serilog;
-using Serilog.Core;
-using Serilog.Events;
 
 namespace NetCore8583
 {
@@ -38,10 +35,6 @@ namespace NetCore8583
         /// </summary>
         private readonly Dictionary<int, string> _isoHeaders = new Dictionary<int, string>();
 
-        private readonly Logger _logger = new LoggerConfiguration().MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .Enrich.FromLogContext()
-            .WriteTo.Console().CreateLogger();
 
         /// <summary>
         ///     This map stores the message template for each message type.
@@ -147,12 +140,12 @@ namespace NetCore8583
 
         protected T CreateIsoMessageWithBinaryHeader(sbyte[] binHeader)
         {
-            return (T) new IsoMessage(binHeader);
+            return (T)new IsoMessage(binHeader);
         }
 
         protected T CreateIsoMessage(string isoHeader)
         {
-            return (T) new IsoMessage(isoHeader);
+            return (T)new IsoMessage(isoHeader);
         }
 
         /// <summary>
@@ -188,7 +181,7 @@ namespace NetCore8583
                 for (var i = 2; i <= 128; i++)
                     if (templ.HasField(i))
                         m.SetField(i,
-                            (IsoValue) templ.GetField(i).Clone());
+                            (IsoValue)templ.GetField(i).Clone());
             if (TraceGenerator != null)
                 m.SetValue(11,
                     TraceGenerator.NextTrace(),
@@ -271,10 +264,6 @@ namespace NetCore8583
                 dateTimeParseInfo.TimeZoneInfo = tz;
                 return;
             }
-
-            _logger.Warning("Field {@Field} for message type {@MessageType} is not for dates, cannot set timezone",
-                field,
-                messageType);
         }
 
         /// <summary>
@@ -515,8 +504,6 @@ namespace NetCore8583
             var index = ParseOrder[type];
             if (index == null)
             {
-                _logger.Error(
-                    $"ISO8583 MessageFactory has no parsing guide for message type {type:X} [{buf.ToString(0, buf.Length, _encoding)}]");
                 throw new Exception(
                     $"ISO8583 MessageFactory has no parsing guide for message type {type:X} [{buf.ToString(0, buf.Length, _encoding)}]");
             }
@@ -526,8 +513,6 @@ namespace NetCore8583
             for (var i = 1; i < bs.Length; i++)
                 if (bs.Get(i) && !index.Contains(i + 1))
                 {
-                    _logger.Warning("ISO8583 MessageFactory cannot parse field {Field}: unspecified in parsing guide",
-                        i + 1);
                     abandon = true;
                 }
 
@@ -539,11 +524,8 @@ namespace NetCore8583
                 {
                     var fpi = parseGuide[i];
                     if (!bs.Get(i - 1)) continue;
-                    if (IgnoreLast && pos >= buf.Length && i == index[^1])
+                    if (IgnoreLast && pos >= buf.Length && i == index[index.Count - 1])
                     {
-                        _logger.Warning("Field {@Index} is not really in the message even though it's in the bitmap",
-                            i);
-
                         bs.Set(i - 1,
                             false);
                     }
@@ -586,11 +568,8 @@ namespace NetCore8583
                 {
                     var fpi = parseGuide[i];
                     if (bs.Get(i - 1))
-                        if (IgnoreLast && pos >= buf.Length && i == index[^1])
+                        if (IgnoreLast && pos >= buf.Length && i == index[index.Count - 1])
                         {
-                            _logger.Warning(
-                                "Field {@FieldId} is not really in the message even though it's in the bitmap",
-                                i);
                             bs.Set(i - 1,
                                 false);
                         }
@@ -635,7 +614,10 @@ namespace NetCore8583
         public void SetIsoHeaders(Dictionary<int, string> val)
         {
             _isoHeaders.Clear();
-            foreach (var (key, value) in val) _isoHeaders.Add(key, value);
+            foreach (var kvp in val)
+            {
+                _isoHeaders.Add(kvp.Key, kvp.Value);
+            }
         }
 
         /// <summary>
@@ -749,7 +731,6 @@ namespace NetCore8583
             var index = new List<int>();
             index.AddRange(map.Keys);
             index.Sort();
-            _logger.Warning($"ISO8583 MessageFactory adding parse map for type {type:X} with fields {index}");
 
             if (ParseOrder.ContainsKey(type)) ParseOrder[type] = index;
             else

@@ -1,0 +1,83 @@
+﻿<Window x:Class="WpfApp1.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfApp1"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800" Background="#ced4da">
+    
+    <Window.Resources>
+        <Style x:Key="BtnDefault" TargetType="Button">
+            <Setter Property="Background" Value="#007ACC" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="Padding" Value="10,5" />
+            <Setter Property="BorderBrush" Value="#005A9E" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <Style x:Key="BtnIcon" TargetType="Button">
+            <Setter Property="Background" Value="#007ACC" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="BorderBrush" Value="#005A9E" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+    </Window.Resources>
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0"  >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Label Grid.Row="0" Content="JSON Body"/>
+            <RichTextBox x:Name="txtJsonBody"  Grid.Row="1" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+
+            <Label Grid.Row="0" Grid.Column="2"  Content="ISO Message"/>
+            <RichTextBox x:Name="txtIsoMessage"  Grid.Column="2"  Grid.Row="1" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+
+            <Button Grid.Row="2"  Click="ParseJsonBody" Style="{StaticResource BtnDefault}" Margin="4" HorizontalAlignment="Center" VerticalAlignment="Center">Parse JSON</Button>
+            <Button Grid.Row="2" Grid.Column="2" Click="ParseMessage" Style="{StaticResource BtnDefault}" Margin="4" HorizontalAlignment="Center" VerticalAlignment="Center">Parse Message</Button>
+
+            <StackPanel Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" >
+                <Button  Click="CreateIsoMessage" Style="{StaticResource BtnIcon}" Margin="3" HorizontalAlignment="Center" VerticalAlignment="Center">&#x27BE;</Button>
+                <!--<Button  Click="ParseMessage" Style="{StaticResource BtnIcon}" Margin="2" HorizontalAlignment="Center" VerticalAlignment="Center">&#x27BE;</Button>-->
+            </StackPanel>
+
+        </Grid>
+
+        
+        <!-- GridSplitter for user resizing -->
+        <GridSplitter Grid.Row="1" Height="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      Background="DarkGray" ResizeBehavior="PreviousAndNext"/>
+
+        <DataGrid Grid.Row="2" x:Name="MyDataGrid" AutoGenerateColumns="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Position" Binding="{Binding Field}" Width="48"/>
+                <DataGridTextColumn Header="Description" Binding="{Binding Description}" Width="auto" MaxWidth="500"/>
+                <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+    </Grid>
+</Window>

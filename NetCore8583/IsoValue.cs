@@ -184,13 +184,19 @@ namespace NetCore8583
                             return Type.Format(Convert.ToDecimal(Value),
                                 12);
                     else
-                        return Value switch
-                        {
-                            BigInteger _ => Type.Format(Encoder == null ? Value.ToString() : Encoder.EncodeField(Value),
-                                Length),
-                            long l => Type.Format(l, Length),
-                            _ => Type.Format(Encoder == null ? Value.ToString() : Encoder.EncodeField(Value), Length)
-                        };
+                    if (Value is BigInteger)
+                    {
+                        return Type.Format(Encoder == null ? Value.ToString() : Encoder.EncodeField(Value), Length);
+                    }
+                    else if (Value is long l)
+                    {
+                        return Type.Format(l, Length);
+                    }
+                    else
+                    {
+                        return Type.Format(Encoder == null ? Value.ToString() : Encoder.EncodeField(Value), Length);
+                    }
+
                 case IsoType.ALPHA:
                     return Type.Format(Encoder == null ? Value.ToString() : Encoder.EncodeField(Value),
                         Length);
@@ -246,14 +252,23 @@ namespace NetCore8583
             bool forceStringEncoding)
         {
             var sbytes = new List<sbyte>();
-            var digits = type switch
+            int digits;
+
+            switch (type)
             {
-                IsoType.LLLLBIN => 4,
-                IsoType.LLLLVAR => 4,
-                IsoType.LLLBIN => 3,
-                IsoType.LLLVAR => 3,
-                _ => 2
-            };
+                case IsoType.LLLLBIN:
+                case IsoType.LLLLVAR:
+                    digits = 4;
+                    break;
+                case IsoType.LLLBIN:
+                case IsoType.LLLVAR:
+                    digits = 3;
+                    break;
+                default:
+                    digits = 2;
+                    break;
+            }
+
 
             if (binary)
             {
@@ -274,13 +289,19 @@ namespace NetCore8583
             {
                 var lhead = Convert.ToString(l);
                 var ldiff = digits - lhead.Length;
-                lhead = ldiff switch
+                if (ldiff == 1)
                 {
-                    1 => ('0' + lhead),
-                    2 => ("00" + lhead),
-                    3 => ("000" + lhead),
-                    _ => lhead
-                };
+                    lhead = '0' + lhead;
+                }
+                else if (ldiff == 2)
+                {
+                    lhead = "00" + lhead;
+                }
+                else if (ldiff == 3)
+                {
+                    lhead = "000" + lhead;
+                }
+
 
                 var bytes = lhead.GetSignedBytes(Encoding);
                 sbytes.AddRange(bytes);
@@ -337,19 +358,30 @@ namespace NetCore8583
                     if (binary)
                     {
                         //numeric types in binary are coded like this
-                        var buf = Type switch
+                        sbyte[] buf;
+
+                        switch (Type)
                         {
-                            IsoType.NUMERIC => new sbyte[Length / 2 + Length % 2],
-                            IsoType.AMOUNT => new sbyte[6],
-                            IsoType.DATE10 => new sbyte[Length / 2],
-                            IsoType.DATE4 => new sbyte[Length / 2],
-                            IsoType.DATE_EXP => new sbyte[Length / 2],
-                            IsoType.TIME => new sbyte[Length / 2],
-                            IsoType.DATE12 => new sbyte[Length / 2],
-                            IsoType.DATE14 => new sbyte[Length / 2],
-                            IsoType.DATE6 => new sbyte[Length / 2],
-                            _ => null
-                        };
+                            case IsoType.NUMERIC:
+                                buf = new sbyte[Length / 2 + Length % 2];
+                                break;
+                            case IsoType.AMOUNT:
+                                buf = new sbyte[6];
+                                break;
+                            case IsoType.DATE10:
+                            case IsoType.DATE4:
+                            case IsoType.DATE_EXP:
+                            case IsoType.TIME:
+                            case IsoType.DATE12:
+                            case IsoType.DATE14:
+                            case IsoType.DATE6:
+                                buf = new sbyte[Length / 2];
+                                break;
+                            default:
+                                buf = null;
+                                break;
+                        }
+
 
                         //Encode in BCD if it's one of these types
                         if (buf != null)

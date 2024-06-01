@@ -4,7 +4,7 @@ namespace NetCore8583.Util
 {
     public static class DateUtil
     {
-        private static readonly DateTime Jan1St1970 = new(1970,
+        private static readonly DateTime Jan1St1970 = new DateTime(1970,
             1,
             1,
             0,

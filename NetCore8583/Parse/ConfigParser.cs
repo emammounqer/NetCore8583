@@ -7,9 +7,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using NetCore8583.Codecs;
 using NetCore8583.Util;
-using Serilog;
-using Serilog.Core;
-using Serilog.Events;
+
 
 namespace NetCore8583.Parse
 {
@@ -19,11 +17,6 @@ namespace NetCore8583.Parse
     /// </summary>
     public static class ConfigParser
     {
-        private static readonly Logger Logger = new LoggerConfiguration().MinimumLevel.Debug()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .Enrich.FromLogContext()
-            .WriteTo.Console().CreateLogger();
-
         /// <summary>
         ///     Creates a message factory configured from the default file, which is n8583.xml
         ///     located in the app domain base directory.
@@ -63,7 +56,7 @@ namespace NetCore8583.Parse
                 {
                     if (!string.IsNullOrEmpty(elem.GetAttribute("ref")))
                     {
-                        refs ??= new List<XmlElement>(nodes.Count - i);
+                        refs = refs ?? new List<XmlElement>(nodes.Count - i);
                         refs.Add(elem);
                     }
                     else
@@ -75,13 +68,6 @@ namespace NetCore8583.Parse
                 {
                     var header = elem.ChildNodes.Item(0)?.Value;
                     var binHeader = "true".Equals(elem.GetAttribute("binary"));
-                    if (Logger.IsEnabled(LogEventLevel.Debug))
-                    {
-                        var binary = binHeader ? "binary" : string.Empty;
-
-                        Logger.Debug(
-                            $"Adding {binary} ISO8583 header for type {elem.GetAttribute("type")} : {header}");
-                    }
 
                     if (binHeader)
                         mfact.SetBinaryIsoHeader(type, HexCodec.HexDecode(header).ToUint8());
@@ -107,12 +93,6 @@ namespace NetCore8583.Parse
                     var h = mfact.GetIsoHeader(t2);
                     if (h == null)
                         throw new ArgumentException("Header def " + type + " refers to nonexistent header " + t2);
-                    if (Logger.IsEnabled(LogEventLevel.Debug))
-                        Logger.Debug(
-                            "Adding ISO8583 header for type {Type}: {H} (copied from {Ref})",
-                            elem.GetAttribute("type"),
-                            h,
-                            elem.GetAttribute("ref"));
                     mfact.SetIsoHeader(type, h);
                 }
             }
@@ -131,7 +111,7 @@ namespace NetCore8583.Parse
                     throw new IOException("Invalid ISO8583 type for template: " + elem.GetAttribute("type"));
                 if (!elem.GetAttribute("extends").IsEmpty())
                 {
-                    subs ??= new List<XmlElement>(nodes.Count - i);
+                    subs = subs ?? new List<XmlElement>(nodes.Count - i);
                     subs.Add(elem);
                     continue;
                 }
@@ -334,7 +314,7 @@ namespace NetCore8583.Parse
 
                 if (!elem.GetAttribute("extends").IsEmpty())
                 {
-                    subs ??= new List<XmlElement>(nodes.Count - i);
+                    subs = subs ?? new List<XmlElement>(nodes.Count - i);
                     subs.Add(elem);
                     continue;
                 }
@@ -423,13 +403,12 @@ namespace NetCore8583.Parse
         /// <typeparam name="T"></typeparam>
         private static void Parse<T>(MessageFactory<T> mfact, Stream source) where T : IsoMessage
         {
-            try
-            {
+
                 var xmlDoc = new XmlDocument();
                 xmlDoc.Load(source);
                 var root = xmlDoc.DocumentElement;
 
-                if (root is not {Name: "n8583-config"})
+                if (root != null && root.Name != "n8583-config")
                     throw new Exception("Invalid ISO8583 config file. XML file does not contain any root element.");
 
                 // Parse headers
@@ -440,11 +419,7 @@ namespace NetCore8583.Parse
 
                 // Read the parsing guides
                 ParseGuides(root.GetElementsByTagName("parse"), mfact);
-            }
-            catch (Exception e)
-            {
-                Logger.Error($"ISO8583 Cannot parse XML configuration {e}");
-            }
+
         }
 
         /// <summary>
@@ -456,21 +431,13 @@ namespace NetCore8583.Parse
         /// <typeparam name="T"></typeparam>
         public static void ConfigureFromClasspathConfig<T>(MessageFactory<T> mfact, string path) where T : IsoMessage
         {
-            try
-            {
+
                 var f = AppDomain.CurrentDomain.BaseDirectory + path;
-                using var fsSource = new FileStream(f, FileMode.Open, FileAccess.Read);
-                Logger.Debug(
-                    "ISO8583 Parsing config from classpath file {Path}",
-                    path);
-                Parse(mfact, fsSource);
-            }
-            catch (FileNotFoundException)
-            {
-                Logger.Warning(
-                    "ISO8583 File not found in classpath: {Path}",
-                    path);
-            }
+                using (var fsSource = new FileStream(f, FileMode.Open, FileAccess.Read))
+                {
+                    Parse(mfact, fsSource);
+                }
+
         }
 
         /// <summary>
@@ -482,29 +449,17 @@ namespace NetCore8583.Parse
         /// <typeparam name="T"></typeparam>
         public static async Task ConfigureFromUrlAsync<T>(MessageFactory<T> mfact, Uri url) where T : IsoMessage
         {
-            try
-            {
                 var client = new HttpClient();
                 using (client)
                 {
                     var stream = await client.GetStreamAsync(url);
 
-                    Logger.Debug(
-                        "ISO8583 Parsing config from classpath file {Path}",
-                        url.ToString());
 
                     Parse(
                         mfact,
                         stream);
                 }
-            }
-            catch (Exception)
-            {
-                Logger.Warning(
-                    "ISO8583 File not found in classpath: {Path}",
-                    url.ToString());
-                throw;
-            }
+
         }
 
         /// <summary>
@@ -522,23 +477,15 @@ namespace NetCore8583.Parse
 
             if (!File.Exists(configFile))
             {
-                Logger.Warning("ISO8583 config file n8583.xml not found!");
                 throw new FileNotFoundException("n8583.xml not found!");
             }
 
-            try
+
+            using (var fsSource = new FileStream(configFile, FileMode.Open, FileAccess.Read))
             {
-                using var fsSource = new FileStream(configFile, FileMode.Open, FileAccess.Read);
-                Logger.Debug(
-                    "ISO8583 Parsing config from classpath file {Path}",
-                    configFile);
                 Parse(mfact, fsSource);
             }
-            catch (Exception e)
-            {
-                Logger.Error("Error while parsing the config file" + e);
-                throw;
-            }
+
         }
     }
 }

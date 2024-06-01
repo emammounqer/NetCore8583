@@ -106,7 +106,7 @@ namespace NetCore8583
         /// <returns></returns>
         public static bool NeedsLength(this IsoType isoType)
         {
-            return isoType is IsoType.ALPHA or IsoType.NUMERIC or IsoType.BINARY;
+            return isoType == IsoType.ALPHA || isoType == IsoType.NUMERIC || isoType == IsoType.BINARY;
         }
 
         /// <summary>
@@ -116,27 +116,38 @@ namespace NetCore8583
         /// <returns></returns>
         public static int Length(this IsoType isoType)
         {
-            return isoType switch
+            switch (isoType)
             {
-                IsoType.ALPHA => 0,
-                IsoType.AMOUNT => 12,
-                IsoType.BINARY => 0,
-                IsoType.DATE10 => 10,
-                IsoType.DATE12 => 12,
-                IsoType.DATE14 => 14,
-                IsoType.DATE4 => 4,
-                IsoType.DATE_EXP => 4,
-                IsoType.LLBIN => 0,
-                IsoType.NUMERIC => 0,
-                IsoType.LLVAR => 0,
-                IsoType.LLLVAR => 0,
-                IsoType.TIME => 6,
-                IsoType.LLLBIN => 0,
-                IsoType.LLLLVAR => 0,
-                IsoType.LLLLBIN => 0,
-                IsoType.DATE6 => 6,
-                _ => throw new ArgumentOutOfRangeException(nameof(isoType), isoType, null)
-            };
+                case IsoType.ALPHA:
+                case IsoType.BINARY:
+                case IsoType.LLBIN:
+                case IsoType.NUMERIC:
+                case IsoType.LLVAR:
+                case IsoType.LLLVAR:
+                case IsoType.LLLBIN:
+                case IsoType.LLLLVAR:
+                case IsoType.LLLLBIN:
+                    return 0;
+                case IsoType.AMOUNT:
+                    return 12;
+                case IsoType.DATE10:
+                    return 10;
+                case IsoType.DATE12:
+                    return 12;
+                case IsoType.DATE14:
+                    return 14;
+                case IsoType.DATE4:
+                    return 4;
+                case IsoType.DATE_EXP:
+                    return 4;
+                case IsoType.TIME:
+                    return 6;
+                case IsoType.DATE6:
+                    return 6;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(isoType), isoType, null);
+            }
+
         }
 
         /// <summary>
@@ -148,17 +159,25 @@ namespace NetCore8583
         public static string Format(this IsoType isoType,
             DateTimeOffset dateTime)
         {
-            return isoType switch
+            switch (isoType)
             {
-                IsoType.DATE10 => dateTime.ToString("MMddHHmmss"),
-                IsoType.DATE12 => dateTime.ToString("yyMMddHHmmss"),
-                IsoType.DATE4 => dateTime.ToString("MMdd"),
-                IsoType.DATE14 => dateTime.ToString("yyyyMMddHHmmss"),
-                IsoType.DATE_EXP => dateTime.ToString("yyMM"),
-                IsoType.TIME => dateTime.ToString("HHmmss"),
-                IsoType.DATE6 => dateTime.ToString("yyMMdd"),
-                _ => throw new ArgumentException("IsoType must be DATE10, DATE12, DATE4, DATE14, DATE_EXP or TIME")
-            };
+                case IsoType.DATE10:
+                    return dateTime.ToString("MMddHHmmss");
+                case IsoType.DATE12:
+                    return dateTime.ToString("yyMMddHHmmss");
+                case IsoType.DATE4:
+                    return dateTime.ToString("MMdd");
+                case IsoType.DATE14:
+                    return dateTime.ToString("yyyyMMddHHmmss");
+                case IsoType.DATE_EXP:
+                    return dateTime.ToString("yyMM");
+                case IsoType.TIME:
+                    return dateTime.ToString("HHmmss");
+                case IsoType.DATE6:
+                    return dateTime.ToString("yyMMdd");
+                default:
+                    throw new ArgumentException("IsoType must be DATE10, DATE12, DATE4, DATE14, DATE_EXP or TIME");
+            }
         }
 
         public static string Format(this IsoType isoType,
@@ -170,12 +189,12 @@ namespace NetCore8583
                 case IsoType.ALPHA:
                 {
                     var c = new char[length];
-                    value ??= string.Empty;
+                    value = value ?? string.Empty;
                     
                     if (value.Length > length)
-                        return value[..length];
-                    
-                    if (value.Length == length) return value;
+                        return value.Substring(0, length);
+
+                        if (value.Length == length) return value;
                     
                     Array.Copy(value.ToCharArray(),
                         c,
@@ -221,10 +240,10 @@ namespace NetCore8583
                 }
                 case IsoType.BINARY:
                 {
-                    value ??= string.Empty;
+                    value = value ?? string.Empty;
                     
                     if (value.Length > length)
-                        return value[..length];
+                        return value.Substring(0, length);
                     
                     var c = new char[length];
                     var end = value.Length;

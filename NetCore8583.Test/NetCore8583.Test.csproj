@@ -4,7 +4,7 @@
 
     <IsPackable>false</IsPackable>
 
-    <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net48</TargetFrameworks>
     <ReleaseVersion>1.1.0</ReleaseVersion>
   </PropertyGroup>
 

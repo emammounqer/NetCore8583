@@ -11,7 +11,7 @@ namespace NetCore8583.Util
         public static bool IsLinux()
         {
             var p = (int) Environment.OSVersion.Platform;
-            return p is 4 or 6 or 128;
+            return p is 4 || p is 6 || p is 128;
         }
     }
 }
